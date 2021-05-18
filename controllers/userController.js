@@ -13,17 +13,16 @@ module.exports = {
       }
       const emailExist = await userModel.findOne({ address });
       if (emailExist) {
-        await userModel.update({address},{ name, email, bio,profile_img:!req.files.profile?null:req.files.profile[0].filename})
+        await userModel.update({address},{ name, email, bio})
         const savedUser = await userModel.findOne({ address });
         const accessToken = await signAccessToken(savedUser.id);
-        console.log(savedUser)
         res.json({
           status: 1,
           accessToken,
         });
       }
       else{
-      const newUser = new userModel({ name, email, bio, profile_img:!req.files.profile?null:req.files.profile[0].filename, address });
+      const newUser = new userModel({ name, email, bio, address });
       const savedUser = await newUser.save();
       if (!savedUser) {
         throw createError.createError("cannot Register user");
@@ -32,7 +31,7 @@ module.exports = {
 
       res.json({
         status: 1,
-        accessToken,
+        user:savedUser,
         message: "successfully registered",
       });
     }
@@ -44,6 +43,37 @@ module.exports = {
       next(error);
     }
   },
+
+  setprofile : async(req, res, next)=>{
+    try {
+      const {address } = req.body;
+      console.log(req.files)
+      if (!address) {
+        throw createError.BadRequest();
+      }
+      const emailExist = await userModel.findOne({ address });
+      if (emailExist) {
+      await userModel.update({address},{ profile_img:!req.files.profile?null:req.files.profile[0].filename})
+      let user=await userModel.findOne({ address });
+        res.json({
+          status: 1,
+          user
+        });
+      }
+      else{
+      res.json({
+        status: 0,
+      });
+    }
+    } catch (error) {
+      if (error.isjoi == true) {
+        error.status = 422;
+      }
+      console.log(error);
+      next(error);
+    }
+  },
+  
 
   getprofile : async(req, res, next)=>{
     try {
